@@ -1,6 +1,27 @@
-import EventEmitter from 'EventEmitter';
+var EventEmitter = require('wolfy87-eventemitter');
 
 class ModuleEventEmitter extends EventEmitter {
+	on(evt, listener) {
+		super.on(evt, listener);
+		return {
+			evt: evt,
+			listener: listener
+		};
+	}
+
+	trigger(evt, args) {
+		if (Array.isArray(args)) {
+			super.trigger(evt, args);
+		} else {
+			var arr = [];
+			arr.push(args);
+			super.trigger(evt, arr);
+		}
+	}
+
+	unbind(eventObj) {
+		super.off(eventObj.evt, eventObj.listener);
+	}
 }
 
 class ModuleHelper extends ModuleEventEmitter {
@@ -143,5 +164,11 @@ class ModuleHelper extends ModuleEventEmitter {
   }
 }
 
-window.moduleHelper = new ModuleHelper();
+var moduleHelper = new ModuleHelper();
 moduleHelper.eventEmitter = ModuleEventEmitter;
+
+if (window) {
+	window.moduleHelper = moduleHelper;
+} else if (typeof exports == "object" && typeof module == "object") {
+	module.exports = moduleHelper;
+}
