@@ -167,8 +167,4 @@ class ModuleHelper extends ModuleEventEmitter {
 var moduleHelper = new ModuleHelper();
 moduleHelper.eventEmitter = ModuleEventEmitter;
 
-if (window) {
-	window.moduleHelper = moduleHelper;
-} else if (typeof exports == "object" && typeof module == "object") {
-	module.exports = moduleHelper;
-}
+window.moduleHelper = moduleHelper;
