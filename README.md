@@ -1,15 +1,6 @@
 # moduleHelper
 JavaScript module namespacer and event emitter
 
-## Installation
-
-For now, to be able to build minified file, you need to have "babel", "browserify" and "uglifyjs" installed globaly
-(this should be changed in the near future)
-
-```sh
-$ npm install
-```
-
 ## Usage
 For apps using singletons which needs to be globally available but depending on other singletons inside application
 
@@ -61,3 +52,8 @@ moduleHelper.instantiate('app.welcome', Welcome, [
     'app.user->login'
 ]);
 ```
+
+## Building
+
+For now, to be able to build minified file, you need to have "babel", "browserify" and "uglifyjs" installed globaly
+(this should be changed in the near future)
