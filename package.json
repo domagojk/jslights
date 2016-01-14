@@ -1,5 +1,5 @@
 {
-  "name": "modulehelper",
+  "name": "jslights",
   "version": "1.0.3",
   "description": "JavaScript module namespacer and event emitter",
   "main": "index.js",
@@ -8,15 +8,15 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "babel index.js -o _es5.js && browserify _es5.js -o dist/modulehelper.js && uglifyjs dist/modulehelper.js -o dist/modulehelper.js && rm _es5.js"
+    "install": "babel index.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/domagojk/moduleHelper.git"
+    "url": "https://github.com/domagojk/jslights.git"
   },
   "author": "Domagoj",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/domagojk/moduleHelper/issues"
+    "url": "https://github.com/domagojk/jslights/issues"
   }
 }

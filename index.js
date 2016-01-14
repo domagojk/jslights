@@ -24,7 +24,7 @@ class ModuleEventEmitter extends EventEmitter {
 	}
 }
 
-class ModuleHelper extends ModuleEventEmitter {
+class jsLights extends ModuleEventEmitter {
 
   constructor() {
     super();
@@ -164,7 +164,7 @@ class ModuleHelper extends ModuleEventEmitter {
   }
 }
 
-var moduleHelper = new ModuleHelper();
-moduleHelper.eventEmitter = ModuleEventEmitter;
+var jsLights = new jsLights();
+jsLights.eventEmitter = ModuleEventEmitter;
 
-window.moduleHelper = moduleHelper;
+window.jsLights = jsLights;

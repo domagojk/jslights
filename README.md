@@ -1,4 +1,4 @@
-# moduleHelper
+# jsLights
 JavaScript module namespacer and event emitter
 
 ## Usage
@@ -19,8 +19,8 @@ class Welcome {
     }
 }
 
-// class extending moduleHelpers built in event emitter
-class User extends moduleHelper.EventEmitter {
+// class extending jsLightss built in event emitter
+class User extends jsLights.EventEmitter {
     constructor() {
         this.login();
     }
@@ -36,17 +36,17 @@ class User extends moduleHelper.EventEmitter {
 ### Instantiate singleton
 ```javascript
 // create "new SayHello()" and bind it in "app.sayHello"
-moduleHelper.instantiate('app.sayHello', SayHello); 
+jsLights.instantiate('app.sayHello', SayHello); 
 
 // create "new User()" and bind it in "app.user" 
 // after app.sayHello is initialized
-moduleHelper.instantiate('app.user', User, 'app.sayHello'); 
+jsLights.instantiate('app.user', User, 'app.sayHello'); 
 
 // create "new Welcome()" and bind it in app.welcome
 // after DOM is ready
 // after app.sayHello is initialized
 // after app.user is initialized and triggered "login" event
-moduleHelper.instantiate('app.welcome', Welcome, [
+jsLights.instantiate('app.welcome', Welcome, [
     'onDocumentReady',
     'app.sayHello',
     'app.user->login'
