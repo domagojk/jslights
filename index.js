@@ -20,6 +20,9 @@ class ModuleEventEmitter extends EventEmitter {
 	}
 
 	unbind(eventObj) {
+		if (!eventObj) {
+			return;
+		}
 		super.off(eventObj.evt, eventObj.listener);
 	}
 }
