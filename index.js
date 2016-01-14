@@ -164,5 +164,7 @@ class jsLights extends ModuleEventEmitter {
   }
 }
 
-window.jsLights = new jsLights();
-jsLights.eventEmitter = ModuleEventEmitter;
+var jsl = new jsLights();
+jsl.eventEmitter = ModuleEventEmitter;
+
+window.jsLights = jsl;
