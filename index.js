@@ -1,30 +1,77 @@
 var EventEmitter = require('wolfy87-eventemitter');
 
 class ModuleEventEmitter extends EventEmitter {
-	on(evt, listener) {
-		super.on(evt, listener);
-		return {
-			evt: evt,
-			listener: listener
-		};
-	}
+  on(evt, listener) {
+    super.on(evt, listener);
+    return {
+      evt: evt,
+      listener: listener
+    };
+  }
 
-	trigger(evt, args) {
-		if (Array.isArray(args)) {
-			super.trigger(evt, args);
-		} else {
-			var arr = [];
-			arr.push(args);
-			super.trigger(evt, arr);
-		}
-	}
+  trigger(evt, args) {
+    if (!Array.isArray(args)) {
+      var arr = [];
+      arr.push(args);
+      args = arr;
+    }
 
-	unbind(eventObj) {
-		if (!eventObj) {
-			return;
-		}
-		super.off(eventObj.evt, eventObj.listener);
-	}
+    if (window.jsLights.monitor) {
+      this._monitoring(evt, args);   
+    } else {
+      super.trigger(evt, args);
+    }
+
+    this._registerTrigger(evt);
+  }
+
+  unbind(eventObj) {
+    if (!eventObj) {
+      return;
+    }
+    super.off(eventObj.evt, eventObj.listener);
+  }
+
+  _monitoring(evt, args) {
+    var start = performance.now();
+    super.trigger(evt, args);
+    var end = performance.now();
+    var time = end - start;
+
+    var path = this.constructor.name;
+    if (this.jsLights && this.jsLights.path) {
+      path = this.jsLights.path;
+    }
+    path += '->' + evt;
+
+    if (!window.jsLights._monitoring[path]) {
+      window.jsLights._monitoring[path] = {
+        executed: 0,
+        totalExecTime: 0
+      };
+    }
+    var c = window.jsLights._monitoring[path];
+    c.totalExecTime += time;
+    c.executed++;
+    c.avgExecTime = c.totalExecTime / c.executed;
+    c.totalExecTime = parseFloat(c.totalExecTime.toFixed(2));
+    c.avgExecTime = parseFloat(c.avgExecTime.toFixed(2));
+    c.listeners = Object.keys(this._events).length;
+  }
+
+  _registerTrigger(evt) {
+    if (!this.jsLights) {
+      this.jsLights = {};
+    }
+    if (!this.jsLights.triggered) {
+      this.jsLights.triggered = {};
+    } 
+    if (this.jsLights.triggered[evt] !== undefined) {
+      this.jsLights.triggered[evt]++;
+    } else {
+      this.jsLights.triggered[evt] = 1;
+    }
+  }
 }
 
 class jsLights extends ModuleEventEmitter {
@@ -44,6 +91,10 @@ class jsLights extends ModuleEventEmitter {
   }
 
   assign(path, assign) { 
+    assign.jsLights = {
+      path: path
+    };
+
     var components = path.split('.');
 
     var pointer = window;
@@ -93,9 +144,7 @@ class jsLights extends ModuleEventEmitter {
             else if (!baseClassObj.on) {
               throw new Error(baseClass + ' has no .on function');
             } else {
-              // todo: refractor this, connect event emitter with loader
-              // so this flag would be added automatically
-              if (baseClassObj['_triggered_' + onBaseClass]) {
+              if (baseClassObj.jsLights && baseClassObj.jsLights.triggered && baseClassObj.jsLights.triggered[onBaseClass]) {
                 this.registerEvent(dependency);
               } else {
                 baseClassObj.on(onBaseClass, () => {
@@ -168,6 +217,11 @@ class jsLights extends ModuleEventEmitter {
 }
 
 var jsl = new jsLights();
+
+jsl._monitoring = {}
+jsl.stats = function() {
+  console.table(jsl._monitoring);
+}
 jsl.eventEmitter = ModuleEventEmitter;
 
 window.jsLights = jsl;
