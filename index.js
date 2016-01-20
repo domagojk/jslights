@@ -10,11 +10,11 @@ class ModuleEventEmitter extends EventEmitter {
   }
 
   trigger(evt, args) {
-    if (!Array.isArray(args)) {
+    //if (!Array.isArray(args)) {
       var arr = [];
       arr.push(args);
       args = arr;
-    }
+    //}
 
     if (window.jsLights.monitor) {
       this._monitoring(evt, args);   
@@ -39,18 +39,22 @@ class ModuleEventEmitter extends EventEmitter {
     var time = end - start;
 
     var path = this.constructor.name;
-    if (this.jsLights && this.jsLights.path) {
-      path = this.jsLights.path;
+    if (path == 'jsLights') {
+      path = evt;
+    } else {
+      if (this.jsLights && this.jsLights.path) {
+        path = this.jsLights.path;
+      }
+      path += '->' + evt;
     }
-    path += '->' + evt;
-
-    if (!window.jsLights._monitoring[path]) {
-      window.jsLights._monitoring[path] = {
+    
+    if (!window.jsLights._monitStats[path]) {
+      window.jsLights._monitStats[path] = {
         executed: 0,
         totalExecTime: 0
       };
     }
-    var c = window.jsLights._monitoring[path];
+    var c = window.jsLights._monitStats[path];
     c.totalExecTime += time;
     c.executed++;
     c.avgExecTime = c.totalExecTime / c.executed;
@@ -90,7 +94,36 @@ class jsLights extends ModuleEventEmitter {
     }
   }
 
-  assign(path, assign) { 
+  assign(path, reference, dependency) {
+    this._onPassedDependencies({
+      path: path,
+      dependency: dependency
+    }, function() {
+      return reference;
+    });
+  }
+
+  instantiate(path, reference, dependency) {
+    this._onPassedDependencies({
+      path: path,
+      dependency: dependency
+    }, function() {
+      return new reference();
+    });
+  }
+
+  onPathInstantiated(path, cb) {
+    if (this.triggered.indexOf(path) != -1) {
+      cb();
+    } else {
+      var self = this;
+      this.on(path, function() {
+        cb();
+      });
+    }
+  }
+
+  _assign(path, assign) { 
     assign.jsLights = {
       path: path
     };
@@ -114,8 +147,10 @@ class jsLights extends ModuleEventEmitter {
     this.registerEvent(path);
   }
 
-  instantiate(path, className, events) {
-    
+  _onPassedDependencies(params, cb) {
+    var events = params.dependency;
+    var path = params.path;
+
     if (!events)
       events = [];
 
@@ -162,7 +197,7 @@ class jsLights extends ModuleEventEmitter {
       });
 
       if (deps.length == 0) {
-        this.assign(path, new className());
+        this._assign(path, cb());
         return false;
       }
       return deps;
@@ -180,21 +215,10 @@ class jsLights extends ModuleEventEmitter {
     });
   }
 
-  onPathInstantiated(path, cb) {
-    if (this.triggered.indexOf(path) != -1) {
-      cb();
-    } else {
-      var self = this;
-      this.on(path, function() {
-        cb();
-      });
-    }
-  }
-
   registerEvent(event) {
     if(this.triggered.indexOf(event) == -1) { 
       this.triggered.push(event);
-      this.emit(event);
+      this.trigger(event);
     }
   }
 
@@ -217,10 +241,9 @@ class jsLights extends ModuleEventEmitter {
 }
 
 var jsl = new jsLights();
-
-jsl._monitoring = {}
+jsl._monitStats = {}
 jsl.stats = function() {
-  console.table(jsl._monitoring);
+  console.table(jsl._monitStats);
 }
 jsl.eventEmitter = ModuleEventEmitter;
 
