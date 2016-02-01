@@ -9,6 +9,7 @@ class ModuleEventEmitter extends EventEmitter {
     };
   }
 
+  //todo: intercept emit
   trigger(evt, args) {
     //if (!Array.isArray(args)) {
       var arr = [];
@@ -60,7 +61,11 @@ class ModuleEventEmitter extends EventEmitter {
     c.avgExecTime = c.totalExecTime / c.executed;
     c.totalExecTime = parseFloat(c.totalExecTime.toFixed(2));
     c.avgExecTime = parseFloat(c.avgExecTime.toFixed(2));
-    c.listeners = Object.keys(this._events).length;
+
+    if (!this._events)
+      c.listeners = 0;
+    else 
+      c.listeners = Object.keys(this._events).length;
   }
 
   _registerTrigger(evt) {
@@ -84,6 +89,7 @@ class jsLights extends ModuleEventEmitter {
     super();
 
     this.triggered = [];
+    this._beforeDependency = {};
 
     if (document.body) {
       this.triggered.push('onDocumentReady');
@@ -103,6 +109,86 @@ class jsLights extends ModuleEventEmitter {
     });
   }
 
+  register(path, reference) {
+    var jsLights = this;
+
+    return new class {
+      constructor() {
+        this._after = [];
+        this.path = path;
+        this.reference = reference;
+      }
+
+      after(path) {
+        if (typeof path == 'string')
+          this._after.push(path);
+        else if (Array.isArray(path))
+          this._after = this._after.concat(path);
+
+        return this;
+      }
+
+      before(path) {
+        if(jsLights.triggered.indexOf(path) != -1) { 
+          throw new Error(path + ' is already trigger');
+        }
+
+        if (jsLights._beforeDependency[path]) {
+          if (jsLights._beforeDependency[path].indexOf(this.path) == -1) {
+            jsLights._beforeDependency[path].push(this.path);
+          }
+        } else {
+          jsLights._beforeDependency[path] = [this.path];
+        }
+
+        return this;
+      }
+
+      instantiate(params) {
+        jsLights._onPassedDependencies({
+          path: this.path,
+          override: (params && params.override) ? params.override : this.override,
+          dependency: this._after
+        }, () => {
+          return new this.reference(params);
+        });
+
+        return this;
+      }
+
+      execute(params) {
+        jsLights._onPassedDependencies({
+          path: this.path,
+          override: (params && params.override) ? params.override : this.override,
+          dependency: this._after
+        }, () => {
+          return this.reference(params);
+        });
+
+        return this;
+      }
+
+      assign(params) {
+        jsLights._onPassedDependencies({
+          path: this.path,
+          override: (params && params.override) ? params.override : this.override,
+          dependency: this._after
+        }, () => {
+          return this.reference;
+        });
+
+        return this;
+      }
+    }
+  }
+
+  override(path, reference) {
+    var register = this.register(path, reference);
+    register.override = true;
+    register._after.push(path);
+    return register;
+  }
+
   instantiate(path, reference, dependency) {
     this._onPassedDependencies({
       path: path,
@@ -117,13 +203,32 @@ class jsLights extends ModuleEventEmitter {
       cb();
     } else {
       var self = this;
-      this.on(path, function() {
+      this.once(path, function() {
         cb();
       });
     }
   }
 
-  _assign(path, assign) { 
+  _assign(path, cb) { 
+
+    // should some events be assigned before
+    if (this._beforeDependency[path]) {
+      // check if there are dependencies for assigned path
+      for (var i=0; i < this._beforeDependency[path].length; i++) {
+        // itereate over dependencies
+        var depPath = this._beforeDependency[path][i];
+        // set listener for dependency
+        this.once(depPath, () => {
+          let index = this._beforeDependency[path].indexOf(depPath);
+          this._beforeDependency[path].splice(index, 1);
+          this._assign(path, cb);
+        });
+        return;
+      }
+    }
+
+    var assign = cb();
+
     assign.jsLights = {
       path: path
     };
@@ -137,11 +242,13 @@ class jsLights extends ModuleEventEmitter {
       i++;
 
       if(!pointer[component]) {
-        if(i == components.length)
-          pointer[component] = assign;
-        else
-          pointer[component] = {};
+        pointer[component] = {};
       }
+
+      if(i == components.length) {
+        pointer[component] = assign;
+      }
+
       pointer = pointer[component];
     }
     this.registerEvent(path);
@@ -161,6 +268,10 @@ class jsLights extends ModuleEventEmitter {
     var checkDeps = (events, initial) => {
       // if class is already instantiated
       if (this.triggered.indexOf(path) != -1) {
+        if (params.override) {
+          this._assign(path, cb);
+        }
+
         return;
       }
 
@@ -182,7 +293,7 @@ class jsLights extends ModuleEventEmitter {
               if (baseClassObj.jsLights && baseClassObj.jsLights.triggered && baseClassObj.jsLights.triggered[onBaseClass]) {
                 this.registerEvent(dependency);
               } else {
-                baseClassObj.on(onBaseClass, () => {
+                baseClassObj.once(onBaseClass, () => {
                   this.registerEvent(dependency);
                 });
               }
@@ -197,7 +308,7 @@ class jsLights extends ModuleEventEmitter {
       });
 
       if (deps.length == 0) {
-        this._assign(path, cb());
+        this._assign(path, cb);
         return false;
       }
       return deps;
@@ -209,17 +320,18 @@ class jsLights extends ModuleEventEmitter {
     }
 
     deps.forEach( dependency => {
-      this.on(dependency, function() {
+      this.once(dependency, function() {
         checkDeps(deps);
       }); 
     });
   }
 
   registerEvent(event) {
+    
     if(this.triggered.indexOf(event) == -1) { 
       this.triggered.push(event);
-      this.trigger(event);
     }
+    this.trigger(event);
   }
 
   _getPropertyByPath(path) {
