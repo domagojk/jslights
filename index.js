@@ -88,8 +88,9 @@ class jsLights extends ModuleEventEmitter {
   constructor() {
     super();
 
-    this.triggered = [];
+    this.triggered = ['EventEmitter'];
     this._beforeDependency = {};
+    this._classExtendedWith = {};
 
     if (document.body) {
       this.triggered.push('onDocumentReady');
@@ -101,22 +102,29 @@ class jsLights extends ModuleEventEmitter {
   }
 
   assign(path, reference, dependency) {
-    this._onPassedDependencies({
-      path: path,
-      dependency: dependency
-    }, function() {
-      return reference;
-    });
+    var register = this.register(path, reference);
+    register.after(dependency)
+    register.assign();
+    return register;
   }
 
   register(path, reference) {
     var jsLights = this;
+
+    if (!path) {
+      throw new Error('Missing namespace or reference');
+    }
+    if (typeof path != "string") {
+      reference = path;
+      path = false;
+    }
 
     return new class {
       constructor() {
         this._after = [];
         this.path = path;
         this.reference = reference;
+        this._listeningFor = new Set();
       }
 
       after(path) {
@@ -129,73 +137,195 @@ class jsLights extends ModuleEventEmitter {
       }
 
       before(path) {
-        if(jsLights.triggered.indexOf(path) != -1) { 
-          throw new Error(path + ' is already trigger');
+        if (!this.path) {
+          throw Error('can not set before() without namespacing function');
         }
 
-        if (jsLights._beforeDependency[path]) {
-          if (jsLights._beforeDependency[path].indexOf(this.path) == -1) {
-            jsLights._beforeDependency[path].push(this.path);
+        var paths = [];
+        if (typeof path == 'string')
+          paths.push(path);
+        else if (Array.isArray(path))
+          paths = paths.concat(path);
+
+        for (var i=0; i<paths.length; i++) {
+          var path = paths[i];
+          if(jsLights.triggered.indexOf(path) != -1) { 
+            throw new Error(path + ' is already trigger');
           }
-        } else {
-          jsLights._beforeDependency[path] = [this.path];
-        }
 
+          if (jsLights._beforeDependency[path]) {
+            if (jsLights._beforeDependency[path].indexOf(this.path) == -1) {
+              jsLights._beforeDependency[path].push(this.path);
+            }
+          } else {
+            jsLights._beforeDependency[path] = [this.path];
+          }
+        }
+        
         return this;
       }
 
       instantiate(params) {
-        jsLights._onPassedDependencies({
-          path: this.path,
-          override: (params && params.override) ? params.override : this.override,
-          dependency: this._after
-        }, () => {
-          return new this.reference(params);
-        });
+
+        this.onPassedDependencies = () => {
+          var reference = new this.reference(params);
+          if (this.path) {
+            jsLights._assign(this.path, reference, this._override);
+          }
+        };
+        this._checkDependencies();
 
         return this;
       }
 
       execute(params) {
-        jsLights._onPassedDependencies({
-          path: this.path,
-          override: (params && params.override) ? params.override : this.override,
-          dependency: this._after
-        }, () => {
-          return this.reference(params);
+        
+        this.onPassedDependencies = () => {
+          var reference = this.reference(params);
+          if (this.path) {
+            jsLights._assign(this.path, reference, this._override);
+          }
+        };
+        this._checkDependencies();
+
+        return this;
+      }
+
+      override() {
+        this._override = true;
+        return this;
+      }
+
+      extend(path, reference) {
+
+        this._classCreator = reference || this.reference;
+
+        // when path is instantiated
+        jsLights.onPathInstantiated(path, () => {
+          // creating new class constructor
+          this.reference = this._classCreator(jsLights._getPropertyByPath(path));
+          // assigning it at "path"
+          this.assign();
+
+          // "recompile" all classes which extends this one
+          jsLights._recompileClass(this.path);
+
+          if (!jsLights._classExtendedWith[path]) {
+           jsLights._classExtendedWith[path] = new Set();
+          }
+          
+          jsLights._classExtendedWith[path].add(this);
+          
         });
 
         return this;
       }
 
-      assign(params) {
-        jsLights._onPassedDependencies({
-          path: this.path,
-          override: (params && params.override) ? params.override : this.override,
-          dependency: this._after
-        }, () => {
-          return this.reference;
-        });
+      assign() {
+        this.onPassedDependencies = () => {
+          jsLights._assign(this.path, this.reference, this._override);
+        };
+        this._checkDependencies();
 
         return this;
+      }
+
+      _checkDependencies() {
+
+        // should some events be assigned before
+        if (this._before) {
+          // check if there are dependencies for assigned path
+          for (var i=0; i < this._before.length; i++) {
+            // itereate over dependencies
+            var depPath = this._before[i];
+            // check if already triggered
+            if (jsLights.triggered.indexOf(depPath) != -1) {
+              // event is already triggered
+              if (!this._startedDepCheck) {
+                // if initial check
+                throw new Error(depPath +' is already assigned. Can not set before() for ' + this.path);
+              } else {
+                continue;
+              }
+            } 
+            // set listener for dependency
+            jsLights.once(depPath, () => {
+              this._checkDependencies();
+            });
+            return;
+          }
+        }
+
+        var passed = 0;
+        this._after.forEach( dependency => {
+          if (jsLights.triggered.indexOf(dependency) != -1) 
+            passed++;
+        });
+
+        if (passed == this._after.length) {
+          if (this.onPassedDependencies) {
+            this.onPassedDependencies();
+          }
+          this.onPassedDependencies = false;
+          return;
+        }
+
+        this._after.forEach( dependency => {
+          if (!this._startedDepCheck && dependency.indexOf('->') != -1) {
+            var eventsArr = dependency.split('->');
+            var baseClass = eventsArr[0];
+            var onBaseClass = eventsArr[1];
+
+            jsLights.onPathInstantiated(baseClass, () => {
+              var baseClassObj = jsLights._getPropertyByPath(baseClass);
+              if (!baseClassObj) {
+                throw new Error(baseClass + ' not found');
+              }
+              else if (!baseClassObj.on) {
+                throw new Error(baseClass + ' has no .on function');
+              } else {
+                if (baseClassObj.jsLights && baseClassObj.jsLights.triggered && baseClassObj.jsLights.triggered[onBaseClass]) {
+                  jsLights.registerEvent(dependency);
+                } else {
+                  baseClassObj.once(onBaseClass, () => {
+                    jsLights.registerEvent(dependency);
+                  });
+                }
+              }
+            });
+          }
+
+          if (jsLights.triggered.indexOf(dependency) == -1) {
+            // dependency is not yet triggered
+            // when registered, start again
+            if (!this._listeningFor.has(dependency)) {
+              this._listeningFor.add(dependency);
+
+              jsLights.once(dependency, () => {
+                this._checkDependencies();
+                this._listeningFor.delete(dependency);
+              });
+            }
+            
+          }
+        });
+        this._startedDepCheck = true;
       }
     }
   }
 
-  override(path, reference) {
-    var register = this.register(path, reference);
-    register.override = true;
-    register._after.push(path);
+  extend(path, reference) {
+    var register = this.register(path);
+    register.override()
+    register.extend(path, reference);
     return register;
   }
 
   instantiate(path, reference, dependency) {
-    this._onPassedDependencies({
-      path: path,
-      dependency: dependency
-    }, function() {
-      return new reference();
-    });
+    var register = this.register(path, reference);
+    register.after(dependency)
+    register.instantiate();
+    return register;
   }
 
   onPathInstantiated(path, cb) {
@@ -209,29 +339,21 @@ class jsLights extends ModuleEventEmitter {
     }
   }
 
-  _assign(path, cb) { 
+  _assign(path, assign, override) { 
 
-    // should some events be assigned before
-    if (this._beforeDependency[path]) {
-      // check if there are dependencies for assigned path
-      for (var i=0; i < this._beforeDependency[path].length; i++) {
-        // itereate over dependencies
-        var depPath = this._beforeDependency[path][i];
-        // set listener for dependency
-        this.once(depPath, () => {
-          let index = this._beforeDependency[path].indexOf(depPath);
-          this._beforeDependency[path].splice(index, 1);
-          this._assign(path, cb);
-        });
-        return;
-      }
+    if (!path) {
+      throw new Error('can not assign without namespace');
     }
 
-    var assign = cb();
+    if (!assign === undefined) {
+      throw new Error('can not assign "undefined" for ' + path);
+    }
 
-    assign.jsLights = {
-      path: path
-    };
+    if (assign) {
+      assign.jsLights = {
+        path: path
+      };
+    }
 
     var components = path.split('.');
 
@@ -254,76 +376,20 @@ class jsLights extends ModuleEventEmitter {
     this.registerEvent(path);
   }
 
-  _onPassedDependencies(params, cb) {
-    var events = params.dependency;
-    var path = params.path;
+  _recompileClass(path) {
+    if (this._classExtendedWith[path]) { 
+      for (let c of this._classExtendedWith[path]) {
+        // creating new class constructor
+        c.reference = c._classCreator(this._getPropertyByPath(path));
+        // assigning and overiding it
+        c.override();
+        c.assign();
 
-    if (!events)
-      events = [];
-
-    if (typeof events == 'string') {
-      events = [events];
-    }
-
-    var checkDeps = (events, initial) => {
-      // if class is already instantiated
-      if (this.triggered.indexOf(path) != -1) {
-        if (params.override) {
-          this._assign(path, cb);
+        if(path != c.path) {
+          this._recompileClass(c.path);
         }
-
-        return;
       }
-
-      var deps = [];
-      events.forEach( dependency => {
-        if (initial && dependency.indexOf('->') != -1) {
-          var eventsArr = dependency.split('->');
-          var baseClass = eventsArr[0];
-          var onBaseClass = eventsArr[1];
-
-          this.onPathInstantiated(baseClass, () => {
-            var baseClassObj = this._getPropertyByPath(baseClass);
-            if (!baseClassObj) {
-              throw new Error(baseClass + ' not found');
-            }
-            else if (!baseClassObj.on) {
-              throw new Error(baseClass + ' has no .on function');
-            } else {
-              if (baseClassObj.jsLights && baseClassObj.jsLights.triggered && baseClassObj.jsLights.triggered[onBaseClass]) {
-                this.registerEvent(dependency);
-              } else {
-                baseClassObj.once(onBaseClass, () => {
-                  this.registerEvent(dependency);
-                });
-              }
-            }
-          });
-        }
-
-        if (this.triggered.indexOf(dependency) == -1) {
-          // dependency is not yet triggered
-          deps.push(dependency);
-        }
-      });
-
-      if (deps.length == 0) {
-        this._assign(path, cb);
-        return false;
-      }
-      return deps;
     }
-
-    var deps = checkDeps(events, true);
-    if (!deps) {
-      return;
-    }
-
-    deps.forEach( dependency => {
-      this.once(dependency, function() {
-        checkDeps(deps);
-      }); 
-    });
   }
 
   registerEvent(event) {
@@ -335,7 +401,11 @@ class jsLights extends ModuleEventEmitter {
   }
 
   _getPropertyByPath(path) {
-      
+    
+    if (path == 'EventEmitter') {
+      return window.jsLights.eventEmitter;
+    }
+
     var parts = path.split( '.' );
     var property = window;
 
