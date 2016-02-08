@@ -208,7 +208,7 @@ class jsLights extends ModuleEventEmitter {
           this.assign();
 
           // "recompile" all classes which extends this one
-          jsLights._recompileClass(this.path);
+          jsLights._recompileClass(this);
 
           if (!jsLights._classExtendedWith[path]) {
            jsLights._classExtendedWith[path] = new Set();
@@ -376,18 +376,18 @@ class jsLights extends ModuleEventEmitter {
     this.registerEvent(path);
   }
 
-  _recompileClass(path) {
-    if (this._classExtendedWith[path]) { 
-      for (let c of this._classExtendedWith[path]) {
+  _recompileClass(origReference) {
+    if (this._classExtendedWith[origReference.path]) { 
+      for (let c of this._classExtendedWith[origReference.path]) {
+        if(origReference == c) {
+          continue;
+        }
         // creating new class constructor
-        c.reference = c._classCreator(this._getPropertyByPath(path));
+        c.reference = c._classCreator(this._getPropertyByPath(origReference.path));
         // assigning and overiding it
         c.override();
         c.assign();
-
-        if(path != c.path) {
-          this._recompileClass(c.path);
-        }
+        this._recompileClass(c);
       }
     }
   }

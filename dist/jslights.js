@@ -248,7 +248,7 @@ var jsLights = (function (_ModuleEventEmitter) {
               _this4.assign();
 
               // "recompile" all classes which extends this one
-              jsLights._recompileClass(_this4.path);
+              jsLights._recompileClass(_this4);
 
               if (!jsLights._classExtendedWith[path]) {
                 jsLights._classExtendedWith[path] = new Set();
@@ -447,25 +447,25 @@ var jsLights = (function (_ModuleEventEmitter) {
     }
   }, {
     key: '_recompileClass',
-    value: function _recompileClass(path) {
-      if (this._classExtendedWith[path]) {
+    value: function _recompileClass(origReference) {
+      if (this._classExtendedWith[origReference.path]) {
         var _iteratorNormalCompletion2 = true;
         var _didIteratorError2 = false;
         var _iteratorError2 = undefined;
 
         try {
-          for (var _iterator2 = this._classExtendedWith[path][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          for (var _iterator2 = this._classExtendedWith[origReference.path][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
             var c = _step2.value;
 
+            if (origReference == c) {
+              continue;
+            }
             // creating new class constructor
-            c.reference = c._classCreator(this._getPropertyByPath(path));
+            c.reference = c._classCreator(this._getPropertyByPath(origReference.path));
             // assigning and overiding it
             c.override();
             c.assign();
-
-            if (path != c.path) {
-              this._recompileClass(c.path);
-            }
+            this._recompileClass(c);
           }
         } catch (err) {
           _didIteratorError2 = true;
