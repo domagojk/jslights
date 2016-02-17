@@ -1,6 +1,6 @@
 {
   "name": "jslights",
-  "version": "1.0.3",
+  "version": "0.6.1",
   "description": "JavaScript module namespacer and event emitter",
   "main": "index.js",
   "dependencies": {
