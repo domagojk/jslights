@@ -18,7 +18,7 @@ class ModuleEventEmitter extends EventEmitter {
     //}
 
     if (window.jsLights.monitor) {
-      this._monitoring(evt, args);   
+      this._triggerWithMonitoring(evt, args);   
     } else {
       super.trigger(evt, args);
     }
@@ -33,7 +33,7 @@ class ModuleEventEmitter extends EventEmitter {
     super.off(eventObj.evt, eventObj.listener);
   }
 
-  _monitoring(evt, args) {
+  _triggerWithMonitoring(evt, args) {
     var start = performance.now();
     super.trigger(evt, args);
     var end = performance.now();
