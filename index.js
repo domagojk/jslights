@@ -91,6 +91,7 @@ class jsLights extends ModuleEventEmitter {
     this.triggered = ['EventEmitter'];
     this._beforeDependency = {};
     this._classExtendedWith = {};
+    this._alias = {};
 
     if (document.body) {
       this.triggered.push('onDocumentReady');
@@ -111,9 +112,6 @@ class jsLights extends ModuleEventEmitter {
   register(path, reference) {
     var jsLights = this;
 
-    if (!path) {
-      throw new Error('Missing namespace or reference');
-    }
     if (typeof path != "string") {
       reference = path;
       path = false;
@@ -122,7 +120,7 @@ class jsLights extends ModuleEventEmitter {
     return new class {
       constructor() {
         this._after = [];
-        this.path = path;
+        this.path = jsLights._getOriginPath(path);
         this.reference = reference;
         this._listeningFor = new Set();
       }
@@ -137,9 +135,8 @@ class jsLights extends ModuleEventEmitter {
       }
 
       before(path) {
-        if (!this.path) {
+        if (!this.path)
           throw Error('can not set before() without namespacing function');
-        }
 
         var paths = [];
         if (typeof path == 'string')
@@ -149,9 +146,8 @@ class jsLights extends ModuleEventEmitter {
 
         for (var i=0; i<paths.length; i++) {
           var path = paths[i];
-          if(jsLights.triggered.indexOf(path) != -1) { 
+          if(jsLights.triggered.indexOf(path) != -1)
             throw new Error(path + ' is already trigger');
-          }
 
           if (jsLights._beforeDependency[path]) {
             if (jsLights._beforeDependency[path].indexOf(this.path) == -1) {
@@ -165,69 +161,141 @@ class jsLights extends ModuleEventEmitter {
         return this;
       }
 
+      dependency(path) {
+        // alias of "after"
+        return this.after(path);
+      }
+
       instantiate(params) {
 
         this.onPassedDependencies = () => {
           var reference = new this.reference(params);
-          if (this.path) {
-            jsLights._assign(this.path, reference, this._override);
-          }
+          this._assign(reference);
         };
         this._checkDependencies();
 
         return this;
       }
 
-      execute(params) {
+      execute() {
         
-        this.onPassedDependencies = () => {
-          var reference = this.reference(params);
-          if (this.path) {
-            jsLights._assign(this.path, reference, this._override);
-          }
-        };
+        if (!this.onPassedDependencies) {
+          this.onPassedDependencies = () => {
+            var reference = this.reference();
+            this._assign(reference);
+          };
+        }
+        
         this._checkDependencies();
 
         return this;
       }
 
-      override() {
-        this._override = true;
+      executeAs(id) {
+        this.id(id);
+        this.execute();
+      }
+
+      id(id) {
+        this._id = id;
+        this.path = jsLights._getOriginPath(this.path);
+        jsLights._alias[id] = this.path;
+
+        if (this._assigned) {
+          jsLights.registerEvent(id);
+        }
+
         return this;
       }
 
-      extend(path, reference) {
+      extends(path, reference) {
 
-        this._classCreator = reference || this.reference;
+        path = jsLights._getOriginPath(path);
 
-        // when path is instantiated
-        jsLights.onPathInstantiated(path, () => {
-          // creating new class constructor
-          this.reference = this._classCreator(jsLights._getPropertyByPath(path));
-          // assigning it at "path"
-          this.assign();
+        if (!this.reference && reference) {
+          // if there is no registered reference, assign it inside extends()
+          this.reference = reference;
+        }
+        if (!this.path && path) {
+          // if there is no registered path, assign it inside extends()
+          this.path = path;
+          if (this._id)
+            jsLights._alias[this._id] = this.path;
+        }
 
-          // "recompile" all classes which extends this one
-          jsLights._recompileClass(this);
+        this._classCreator = this.reference;
+        // add path as dependency for this class
+        this.after(path);
 
-          if (!jsLights._classExtendedWith[path]) {
-           jsLights._classExtendedWith[path] = new Set();
+        this.onPassedDependencies = () => {
+
+          var superReference = jsLights._getPropertyByPath(path);
+          var superjsLightsInstance = superReference._jsLightsInstance;
+          this.parent = superjsLightsInstance;
+          this.reference = this._classCreator(superReference);
+          this.reference._jsLightsInstance = this;
+
+          if (superjsLightsInstance) {
+            superjsLightsInstance._addChild(this);       
           }
-          
-          jsLights._classExtendedWith[path].add(this);
-          
-        });
+
+          if (this.path == path) {
+            superjsLightsInstance._recompileChildren(this);
+          }
+
+          this.assign();
+                    
+        };
 
         return this;
       }
 
       assign() {
         this.onPassedDependencies = () => {
-          jsLights._assign(this.path, this.reference, this._override);
+          this._assign(this.reference);
         };
         this._checkDependencies();
 
         return this;
+      }
+
+      _assign(reference) {
+        if (!this.path)
+          throw new Error('can not assign without namespace');
+
+        if (!reference === undefined)
+          throw new Error('can not assign "undefined" for ' + this.path);
+
+        if (reference) {
+          reference.jsLights = {
+            path: this.path
+          };
+        }
+
+        var components = this.path.split('.');
+        var pointer = window;
+        var i = 0;
+
+        for (var component of components) {
+          i++;
+
+          if(!pointer[component]) {
+            pointer[component] = {};
+          }
+
+          if(i == components.length) {
+            pointer[component] = reference;
+          }
+
+          pointer = pointer[component];
+        }
+
+        jsLights.registerEvent(this.path);
+
+        if (this._id) {
+          jsLights.registerEvent(this._id);
+        }
+        this._assigned = true;
       }
 
       _checkDependencies() {
@@ -311,13 +379,39 @@ class jsLights extends ModuleEventEmitter {
         });
         this._startedDepCheck = true;
       }
+
+      _recompileChildren(parent) {
+        if (!this.children)
+          return;
+
+        this.children.forEach(child => {
+          if (child != parent) {
+            child.reference = child._classCreator(parent.reference);
+            child.assign();
+
+            child._recompileChildren(child);
+          }
+        });
+      }
+
+      _addChild(child) {
+        if (!this.children)
+          this.children = [];
+
+        this.children.push(child);  
+      }
     }
   }
 
   extend(path, reference) {
-    var register = this.register(path);
-    register.override()
-    register.extend(path, reference);
+    var register = this.register(path, reference);
+    register.extends(path);
+    return register;
+  }
+
+  id(id) {
+    var register = this.register();
+    register.id(id)
     return register;
   }
 
@@ -339,59 +433,6 @@ class jsLights extends ModuleEventEmitter {
     }
   }
 
-  _assign(path, assign, override) { 
-
-    if (!path) {
-      throw new Error('can not assign without namespace');
-    }
-
-    if (!assign === undefined) {
-      throw new Error('can not assign "undefined" for ' + path);
-    }
-
-    if (assign) {
-      assign.jsLights = {
-        path: path
-      };
-    }
-
-    var components = path.split('.');
-
-    var pointer = window;
-    var i = 0;
-
-    for (var component of components) {
-      i++;
-
-      if(!pointer[component]) {
-        pointer[component] = {};
-      }
-
-      if(i == components.length) {
-        pointer[component] = assign;
-      }
-
-      pointer = pointer[component];
-    }
-    this.registerEvent(path);
-  }
-
-  _recompileClass(origReference) {
-    if (this._classExtendedWith[origReference.path]) { 
-      for (let c of this._classExtendedWith[origReference.path]) {
-        if(origReference == c) {
-          continue;
-        }
-        // creating new class constructor
-        c.reference = c._classCreator(this._getPropertyByPath(origReference.path));
-        // assigning and overiding it
-        c.override();
-        c.assign();
-        this._recompileClass(c);
-      }
-    }
-  }
-
   registerEvent(event) {
     
     if(this.triggered.indexOf(event) == -1) { 
@@ -400,8 +441,17 @@ class jsLights extends ModuleEventEmitter {
     this.trigger(event);
   }
 
+  _getOriginPath(path) {
+    while (this._alias[path]) {
+      path = this._alias[path];
+    }
+    return path;
+  } 
+
   _getPropertyByPath(path) {
     
+    path = this._alias[path] || path;
+
     if (path == 'EventEmitter') {
       return window.jsLights.eventEmitter;
     }
