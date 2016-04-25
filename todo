@@ -1,4 +1,0 @@
--inspect object register (da piše nakon čega se neki path triggera, šta je stiglo, šta još čeka)
--throw error on assigning obj in same path, force option
--deep trigger tracking, for possible dependency in form: obj->event->event
--before dependency

@@ -1,5 +1,5 @@
 # jsLights
-JavaScript module namespacer and event emitter
+JavaScript module manager
 
 ## Usage
 For apps using singletons which needs to be globally available but depending on other singletons inside application

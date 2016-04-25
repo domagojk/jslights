@@ -1,21 +1,21 @@
 {
   "name": "jslights",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "description": "JavaScript module namespacer and event emitter",
-  "main": "index.js",
+  "main": "jslights.js",
   "dependencies": {
     "wolfy87-eventemitter": "^4.3.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "babel index.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js",
-    "distnomin": "babel index.js -o _es5.js && browserify _es5.js -o dist/jslights.js && rm _es5.js"
+    "dist": "babel jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js",
+    "distnomin": "babel jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && rm _es5.js"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/domagojk/jslights.git"
   },
-  "author": "Domagoj",
+  "author": "Domagoj Kriskovic",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/domagojk/jslights/issues"

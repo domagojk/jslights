@@ -1,12 +1,50 @@
+/*
+  experimental version with monitoring events and its performance
+*/
 var EventEmitter = require('wolfy87-eventemitter');
 
 class ModuleEventEmitter extends EventEmitter {
+
+  constructor(params) {
+    super(params);
+    this._hooks = {};
+  }
+
   on(evt, listener) {
     super.on(evt, listener);
     return {
       evt: evt,
       listener: listener
     };
+  }
+
+  addHook(name, cb, options) {
+    if (!this._hooks[name]) {
+      this._hooks[name] = [];
+    }
+
+    var priority = (options && options.priority) ? options.priority : 0;
+
+    this._hooks[name].push({
+      cb: cb,
+      priority: priority
+    });
+
+    this._hooks[name] = this._hooks[name].sort(function(a, b) {
+      return b.priority - a.priority;
+    });
+  }
+
+  callHooks(name, ref) {
+    if (this._hooks[name]) {
+      for (var i=0; i < this._hooks[name].length; i++) {
+        var hook = this._hooks[name][i];
+        var returnHookVal = hook.cb(ref);
+        if (returnHookVal) {
+          return returnHookVal;
+        }
+      }
+    }
   }
 
   //todo: intercept emit
@@ -17,12 +55,7 @@ class ModuleEventEmitter extends EventEmitter {
       args = arr;
     //}
 
-    if (window.jsLights.monitor) {
-      this._triggerWithMonitoring(evt, args);   
-    } else {
-      super.trigger(evt, args);
-    }
-
+    this._triggerWithMonitoring(evt, args);   
     this._registerTrigger(evt);
   }
 
@@ -107,6 +140,15 @@ class jsLights extends ModuleEventEmitter {
     register.after(dependency)
     register.assign();
     return register;
+  }
+
+  createInstances(config) {
+    for (var path in config) {
+      this.register(path, function(path) {
+        var fn = this._getPropertyByPath(path);
+        return new fn();
+      }.bind(this, config[path])).dependency(config[path]).execute();
+    }
   }
 
   register(path, reference) {
