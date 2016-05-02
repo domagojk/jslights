@@ -1,20 +1,28 @@
-var EventEmitter = require('wolfy87-eventemitter');
+var WolfyEventEmitter = require('wolfy87-eventemitter');
 
-class ModuleEventEmitter extends EventEmitter {
+/**
+ * Event Emmiter and hooks
+ *
+ * @class EventEmitter
+ * @extends wolfy87-eventemitter
+ */
+class EventEmitter extends WolfyEventEmitter {
 
-  constructor(params) {
-    super(params);
+  /**
+   * Class constructor
+   */
+  constructor() {
+    super();
     this._hooks = {};
   }
 
-  on(evt, listener) {
-    super.on(evt, listener);
-    return {
-      evt: evt,
-      listener: listener
-    };
-  }
-
+  /**
+   * Registering hook by name
+   * @param {String} name Hook name
+   * @param {Function} cb callback function
+   * @param {Object} options aditional options
+   * @param {Object} options.priority hooks with greater priority will be called first (default is 0)
+   */
   addHook(name, cb, options) {
     if (!this._hooks[name]) {
       this._hooks[name] = [];
@@ -32,6 +40,14 @@ class ModuleEventEmitter extends EventEmitter {
     });
   }
 
+  /**
+   * Calling hooks for given name ordered by priority
+   * If hook is not returning false, execution stops
+   *
+   * @param {String} name calling hooks registerd with given name
+   * @param {...*} ref argument passed in hook
+   * @return {...*} return value from hook
+   */
   callHooks(name, ref) {
     if (this._hooks[name]) {
       for (var i=0; i < this._hooks[name].length; i++) {
@@ -44,15 +60,43 @@ class ModuleEventEmitter extends EventEmitter {
     }
   }
 
+  /**
+   * Adds a listener function to the specified event
+   * @param {String} evt - name of the event to attach the listener to
+   * @param {Function} listener - Method to be called when the event is emitted
+   * @return {Object} object with callback reference which can be used for unbinding
+   */
+  on(evt, listener) {
+    super.on(evt, listener);
+    return {
+      evt: evt,
+      listener: listener
+    };
+  }
+
+  /**
+   * Emits an event of your choice
+   * when emitted, every listener attached to that event will be executed.
+   *
+   * @param {String} evt name of the event to emit and execute listeners
+   * @param {...*} args optional argument to be passed to each listener
+   * @return {...*} current instance of EventEmitter for chaining
+   */
   trigger(evt, args) {
     var arr = [];
     arr.push(args);
     args = arr;
 
-    super.trigger(evt, args);
+    var toReturn = super.trigger(evt, args);
     this._registerTrigger(evt);
+    return toReturn;
   }
 
+  /**
+   * Removes a listener function based on eventObject returned from method .on()
+   *
+   * @param {Object} eventObj
+   */
   unbind(eventObj) {
     if (!eventObj) {
       return;
@@ -60,6 +104,10 @@ class ModuleEventEmitter extends EventEmitter {
     super.off(eventObj.evt, eventObj.listener);
   }
 
+  /*
+   * Registers trigger event
+   * @param {String} evt - name of the event
+   */
   _registerTrigger(evt) {
     if (!this.jsLights) {
       this.jsLights = {};
@@ -75,7 +123,12 @@ class ModuleEventEmitter extends EventEmitter {
   }
 }
 
-class JsLights extends ModuleEventEmitter {
+/**
+ *
+ * @class JsLights
+ * @extends EventEmitter
+ */
+class JsLights extends EventEmitter {
 
   constructor() {
     super();
@@ -97,6 +150,12 @@ class JsLights extends ModuleEventEmitter {
     }
   }
 
+  /**
+   * Assigning reference at given path
+   * @param {String} path (for example app.my.function)
+   * @param {...*} reference to be assigned (usually a function or class)
+   * @param {String/Array} dependency (optional) if given, reference will be assigned after passed dependencies
+   */
   assign(path, reference, dependency) {
     var register = this.register(path, reference);
     register.after(dependency)
@@ -104,6 +163,12 @@ class JsLights extends ModuleEventEmitter {
     return register;
   }
 
+  /**
+   * Execute after passed dependencies
+   * If all dependencies are already triggered, callback is executed immediately
+   * otherwise, callback is executed when all dependencies have been triggered
+   * @param {String/Array}
+   */
   after(after, cb) {
     if (typeof cb != 'function') {
       throw new Error('invalid callback function');
@@ -175,6 +240,16 @@ class JsLights extends ModuleEventEmitter {
     cb.jsLights._startedDepCheck = true;
   }
 
+  /**
+   * Creating singleton instances using config structure
+   * example: 
+   *  { 
+   *    'app.mySingleton': 'app.MyClass',
+   *    'app.somethingElse': 'app.AnotherClass'
+   *  }
+   * ()
+   * @param {Object} config
+   */
   createInstances(config) {
     for (var path in config) {
       this.register(path, function(path) {
@@ -486,17 +561,11 @@ class JsLights extends ModuleEventEmitter {
     return register;
   }
 
-  id(id) {
-    var register = this.register();
-    register.id(id)
-    return register;
-  }
-
   inspect(path) {
     if (!path) {
       throw new Error('Invalid path');
     }
-    
+
     var found = false;
     for (var item of this._registered) {
       if (item.path == path) {
@@ -586,6 +655,6 @@ class JsLights extends ModuleEventEmitter {
 }
 
 var jsl = new JsLights();
-jsl.eventEmitter = jsl.base = ModuleEventEmitter;
+jsl.eventEmitter = jsl.base = EventEmitter;
 
 window.jsLights = jsl;
