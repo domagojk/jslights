@@ -647,7 +647,8 @@ class JsLights extends EventEmitter {
   /**
    * @memberof jsLights
    * @method inspect
-   * @desc ss
+   * @desc Checking status for passed path
+   * is it triggered or pending, showing status for all dependencies 
    * @param {String} path (for example app.my.function)
    */
   inspect(path) {
