@@ -174,12 +174,12 @@ class JsLights extends EventEmitter {
   /**
    * @memberof jsLights
    * @method assign
-   * @desc Assigning reference at given path
+   * @desc Assigning reference in passed path
    *
    * @param {String} path (for example app.my.function)
    * @param {...*} reference to be assigned (usually a function or class)
    * @param {String/Array} dependency (optional) if given, reference will be assigned after passed dependencies
-   * @return {ReturnedInstace}
+   * @return {register_instance}
    * @example
    * var hello = function() {
    *   console.log("hello") 
@@ -308,7 +308,7 @@ class JsLights extends EventEmitter {
    * @desc Registering reference at given path
    * @param {String} path (for example app.my.function)
    * @param {...*} reference to be assigned (usually a function or class)
-   * @return {ReturnedInstace}
+   * @return {register_instance}
    * @example
    * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', Parent => class extends Parent {
    *   // child extends parent
@@ -331,7 +331,7 @@ class JsLights extends EventEmitter {
 
     /**
      * 
-     * @class ReturnedInstace
+     * @class register_instance
      */
     return new class {
       constructor() {
@@ -344,12 +344,18 @@ class JsLights extends EventEmitter {
       }
 
       /**
-       * @memberof ReturnedInstace
+       * @memberof register_instance
        * @method after
-       * @desc Registering reference at given path
-       * @param {String} path (for example app.my.function)
-       * @param {...*} reference to be assigned (usually a function or class)
-       * @return {ReturnedInstace}
+       * @desc registration will be executed after passed dependencies have been triggered
+       * @param {String/Array} path (for example app.my.function)
+       * @return {register_instance}
+       * @example
+       * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+       *   return class extends Parent {
+       *      // child extends parent
+       *      // after triggered dependencies My.Namespace1 and My.Namespace1
+       *   }
+       * }).after(["My.Namespace1", "My.Namespace2"]).execute();
        */
       after(path) {
         if (typeof path == 'string')
@@ -360,6 +366,37 @@ class JsLights extends EventEmitter {
         return this;
       }
 
+      /**
+       * @memberof register_instance
+       * @method assign
+       * @desc 
+       * Assigning reference (end of chain)
+       * @example
+       * jsLights.register('My.Namespace1', myFunction).after('My.Namespace2').assign()
+       */
+      assign() {
+        this.onPassedDependencies = () => {
+          this._assign(this.reference);
+        };
+        this._checkDependencies();
+
+        return this;
+      }
+
+      /**
+       * @memberof register_instance
+       * @method before
+       * @desc registration will be executed before passed dependencies have been triggered
+       * @param {String/Array} path (for example app.my.function)
+       * @return {register_instance}
+       * @example
+       * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+       *   return class extends Parent {
+       *      // child extends parent
+       *      // after triggered dependencies My.Namespace1 and My.Namespace1
+       *   }
+       * }).after("My.Namespace1").before("My.Namespace2").execute();
+       */
       before(path) {
         if (!this.path)
           throw Error('can not set before() without namespacing function');
@@ -387,22 +424,34 @@ class JsLights extends EventEmitter {
         return this;
       }
 
+      /**
+       * @memberof register_instance
+       * @method dependency
+       * @alias after
+       * @desc (alias of after) 
+       * registration will be executed after passed dependencies have been triggered
+       * @param {String/Array} path (for example app.my.function)
+       * @return {register_instance}
+       * @example
+       * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+       *   return class extends Parent {
+       *      // child extends parent
+       *      // after triggered dependencies My.Namespace1 and My.Namespace1
+       *   }
+       * }).after(["My.Namespace1", "My.Namespace2"]).execute();
+       */
       dependency(path) {
-        // alias of "after"
         return this.after(path);
       }
 
-      instantiate(params) {
-
-        this.onPassedDependencies = () => {
-          var reference = new this.reference(params);
-          this._assign(reference);
-        };
-        this._checkDependencies();
-
-        return this;
-      }
-
+      /**
+       * @memberof register_instance
+       * @method instantiate
+       * @desc 
+       * On passed dependencies, reference will be assigned (end of chain)
+       * @example
+       * jsLights.register('My.Namespace', SampleFunction).after(dependencies).execute()
+       */
       execute() {
         
         if (!this.onPassedDependencies) {
@@ -413,27 +462,37 @@ class JsLights extends EventEmitter {
         }
         
         this._checkDependencies();
-
-        return this;
       }
 
+      /**
+       * @memberof register_instance
+       * @method executeAs
+       * @desc 
+       * On passed dependencies, reference will be assigned with passed id (end of chain)
+       * @param {String} id
+       * @example
+       * jsLights.register('My.Namespace', SampleClass).after(dependencies).executeAs('My:Class')
+       */
       executeAs(id) {
         this.id(id);
         this.execute();
       }
 
-      id(id) {
-        this._id = id;
-        this.path = jsLights._getOriginPath(this.path);
-        jsLights._alias[id] = this.path;
-
-        if (this._assigned) {
-          jsLights._registerEvent(id);
-        }
-
-        return this;
-      }
-
+      /**
+       * @memberof register_instance
+       * @method extends
+       * @desc 
+       * Extending class using namespace path
+       * @param {String} id
+       * @param {Function} callback that should return new class
+       * @return {register_instance}
+       * @example
+       * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+       *   return class extends Parent {
+       *      // child extends parent
+       *   }
+       * }).execute();
+       */
       extends(path, reference) {
 
         path = jsLights._getOriginPath(path);
@@ -476,13 +535,44 @@ class JsLights extends EventEmitter {
         return this;
       }
 
-      assign() {
-        this.onPassedDependencies = () => {
-          this._assign(this.reference);
-        };
-        this._checkDependencies();
+      /**
+       * @memberof register_instance
+       * @method id
+       * @desc 
+       * Assigning id on registered reference
+       * @param {String} id
+       * @return {register_instance}
+       * @example
+       * jsLights.register('My.Namespace', SampleClass).after(dependencies).id('My:Class').execute()
+       */
+      id(id) {
+        this._id = id;
+        this.path = jsLights._getOriginPath(this.path);
+        jsLights._alias[id] = this.path;
+
+        if (this._assigned) {
+          jsLights._registerEvent(id);
+        }
 
         return this;
+      }
+
+      /**
+       * @memberof register_instance
+       * @method instantiate
+       * @desc 
+       * On passed dependencies, instance of registered function will be created (end of chain)
+       * @param {...*} params params passed in registered function
+       * @example
+       * jsLights.register('My.Namespace', SampleClass).after(dependencies).instantiate()
+       */
+      instantiate(params) {
+
+        this.onPassedDependencies = () => {
+          var reference = new this.reference(params);
+          this._assign(reference);
+        };
+        this._checkDependencies();
       }
 
       _assign(reference) {
@@ -636,7 +726,7 @@ class JsLights extends EventEmitter {
    * Shorthand for jsLights.register(path, reference).extends(path)
    * @param {String} path (for example app.my.function)
    * @param {Function} reference to be assigned (must be a function returning class)
-   * @return {ReturnedInstace}
+   * @return {register_instance}
    */
   extend(path, reference) {
     var register = this.register(path, reference);
@@ -692,7 +782,7 @@ class JsLights extends EventEmitter {
    * Shorthand for jsLights.register(path, reference).after(dependencies).instantiate()
    * @param {String} path (for example app.my.function)
    * @param {Function} reference from which instance is created
-   * @return {ReturnedInstace}
+   * @return {register_instance}
    */
   instantiate(path, reference, dependency) {
     var register = this.register(path, reference);

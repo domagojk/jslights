@@ -1,7 +1,7 @@
 {
   "name": "jslights",
   "version": "0.6.4",
-  "description": "JavaScript module namespacer and event emitter",
+  "description": "JavaScript module manager",
   "main": "jslights.js",
   "dependencies": {
     "wolfy87-eventemitter": "^4.3.0"

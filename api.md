@@ -1,16 +1,4 @@
-## Classes
-
-<dl>
-<dt><a href="#jsLights">jsLights</a></dt>
-<dd></dd>
-<dt><a href="#ReturnedInstace">ReturnedInstace</a></dt>
-<dd></dd>
-</dl>
-
-<a name="jsLights"></a>
-
 ## jsLights
-**Kind**: global class  
 
 * [jsLights](#jsLights)
     * [.addHook(name, cb, options)](#jsLights.addHook)
@@ -18,20 +6,19 @@
     * [.on(evt, listener)](#jsLights.on) ⇒ <code>Object</code>
     * [.trigger(evt, ...args)](#jsLights.trigger) ⇒ <code>\*</code>
     * [.unbind(eventObj)](#jsLights.unbind)
-    * [.assign(path, ...reference, dependency)](#jsLights.assign) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+    * [.assign(path, ...reference, dependency)](#jsLights.assign) ⇒ <code>[register_instance](#register_instance)</code>
     * [.after(dependencies, callback)](#jsLights.after)
     * [.createInstances(config)](#jsLights.createInstances)
-    * [.register(path, ...reference)](#jsLights.register) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
-    * [.extend(path, reference)](#jsLights.extend) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+    * [.register(path, ...reference)](#jsLights.register) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.extend(path, reference)](#jsLights.extend) ⇒ <code>[register_instance](#register_instance)</code>
     * [.inspect(path)](#jsLights.inspect)
-    * [.instantiate(path, reference)](#jsLights.instantiate) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+    * [.instantiate(path, reference)](#jsLights.instantiate) ⇒ <code>[register_instance](#register_instance)</code>
 
 <a name="jsLights.addHook"></a>
 
 ### jsLights.addHook(name, cb, options)
 Registering hook by name
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -50,7 +37,6 @@ My.singleton.addHook('onFetchingResults', this.myFunction, { priority: 10 });
 Calling hooks for given name ordered by priority
 If hook is not returning false, execution stops
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 **Returns**: <code>\*</code> - return value from hook  
 
 | Param | Type | Description |
@@ -67,7 +53,6 @@ this.callHooks('onFetchingResults', {myParameter: 5});
 ### jsLights.on(evt, listener) ⇒ <code>Object</code>
 Adds a listener function to the specified event
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 **Returns**: <code>Object</code> - object with callback reference which can be used for unbinding  
 
 | Param | Type | Description |
@@ -87,7 +72,6 @@ My.singleton.on('notification', function(data) {
 Emits an event of your choice
 when emitted, every listener attached to that event will be executed.
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 **Returns**: <code>\*</code> - current instance of EventEmitter for chaining  
 
 | Param | Type | Description |
@@ -104,7 +88,6 @@ this.trigger('notification', { title: "Hello, its me." });
 ### jsLights.unbind(eventObj)
 Removes a listener function based on eventObject returned from method .on()
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type |
 | --- | --- |
@@ -117,10 +100,9 @@ this.unbind(this._onNotifyReference);
 ```
 <a name="jsLights.assign"></a>
 
-### jsLights.assign(path, ...reference, dependency) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
-Assigning reference at given path
+### jsLights.assign(path, ...reference, dependency) ⇒ <code>[register_instance](#register_instance)</code>
+Assigning reference in passed path
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -145,7 +127,6 @@ Execute after passed dependencies
 If all dependencies are already triggered, callback is executed immediately
 otherwise, callback is executed when all dependencies have been triggered
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type |
 | --- | --- |
@@ -163,7 +144,6 @@ jsLights.after(['My.Namespace1', 'My.Namespace2'], function() {
 ### jsLights.createInstances(config)
 Creating singleton instances using config structure
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type |
 | --- | --- |
@@ -178,10 +158,9 @@ jsLights.createInstances({
 ```
 <a name="jsLights.register"></a>
 
-### jsLights.register(path, ...reference) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+### jsLights.register(path, ...reference) ⇒ <code>[register_instance](#register_instance)</code>
 Registering reference at given path
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -203,11 +182,10 @@ jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(
 ```
 <a name="jsLights.extend"></a>
 
-### jsLights.extend(path, reference) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+### jsLights.extend(path, reference) ⇒ <code>[register_instance](#register_instance)</code>
 Extending class assigned in path with passed reference
 Shorthand for jsLights.register(path, reference).extends(path)
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -217,9 +195,9 @@ Shorthand for jsLights.register(path, reference).extends(path)
 <a name="jsLights.inspect"></a>
 
 ### jsLights.inspect(path)
-ss
+Checking status for passed path
+is it triggered or pending, showing status for all dependencies
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -227,30 +205,165 @@ ss
 
 <a name="jsLights.instantiate"></a>
 
-### jsLights.instantiate(path, reference) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
+### jsLights.instantiate(path, reference) ⇒ <code>[register_instance](#register_instance)</code>
 Creating instance from passed reference and assigning it in path
 Shorthand for jsLights.register(path, reference).after(dependencies).instantiate()
 
-**Kind**: static method of <code>[jsLights](#jsLights)</code>  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | path | <code>String</code> | (for example app.my.function) |
 | reference | <code>function</code> | from which instance is created |
 
-<a name="ReturnedInstace"></a>
+<a name="register_instance"></a>
 
-## ReturnedInstace
-**Kind**: global class  
-<a name="ReturnedInstace.after"></a>
+## register_instance
 
-### ReturnedInstace.after(path, ...reference) ⇒ <code>[ReturnedInstace](#ReturnedInstace)</code>
-Registering reference at given path
+* [register_instance](#register_instance)
+    * [.after(path)](#after) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.assign()](#assign)
+    * [.before(path)](#before) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.dependency(path)](#dependency) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.instantiate()](#instantiate)
+    * [.executeAs(id)](#executeAs)
+    * [.extends(id, callback)](#extends) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.id(id)](#id) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.instantiate(...params)](#instantiate)
 
-**Kind**: static method of <code>[ReturnedInstace](#ReturnedInstace)</code>  
+<a name="after"></a>
+
+### after(path) ⇒ <code>[register_instance](#register_instance)</code>
+registration will be executed after passed dependencies have been triggered
+
 
 | Param | Type | Description |
 | --- | --- | --- |
-| path | <code>String</code> | (for example app.my.function) |
-| ...reference | <code>\*</code> | to be assigned (usually a function or class) |
+| path | <code>String/Array</code> | (for example app.my.function) |
 
+**Example**  
+```js
+jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+  return class extends Parent {
+     // child extends parent
+     // after triggered dependencies My.Namespace1 and My.Namespace1
+  }
+}).after(["My.Namespace1", "My.Namespace2"]).execute();
+```
+<a name="assign"></a>
+
+### assign()
+Assigning reference (end of chain)
+
+**Example**  
+```js
+jsLights.register('My.Namespace1', myFunction).after('My.Namespace2').assign()
+```
+<a name="before"></a>
+
+### before(path) ⇒ <code>[register_instance](#register_instance)</code>
+registration will be executed before passed dependencies have been triggered
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| path | <code>String/Array</code> | (for example app.my.function) |
+
+**Example**  
+```js
+jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+  return class extends Parent {
+     // child extends parent
+     // after triggered dependencies My.Namespace1 and My.Namespace1
+  }
+}).after("My.Namespace1").before("My.Namespace2").execute();
+```
+<a name="dependency"></a>
+
+### dependency(path) ⇒ <code>[register_instance](#register_instance)</code>
+(alias of after) 
+registration will be executed after passed dependencies have been triggered
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| path | <code>String/Array</code> | (for example app.my.function) |
+
+**Example**  
+```js
+jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+  return class extends Parent {
+     // child extends parent
+     // after triggered dependencies My.Namespace1 and My.Namespace1
+  }
+}).after(["My.Namespace1", "My.Namespace2"]).execute();
+```
+<a name="instantiate"></a>
+
+### instantiate()
+On passed dependencies, reference will be assigned (end of chain)
+
+**Example**  
+```js
+jsLights.register('My.Namespace', SampleFunction).after(dependencies).execute()
+```
+<a name="executeAs"></a>
+
+### executeAs(id)
+On passed dependencies, reference will be assigned with passed id (end of chain)
+
+
+| Param | Type |
+| --- | --- |
+| id | <code>String</code> | 
+
+**Example**  
+```js
+jsLights.register('My.Namespace', SampleClass).after(dependencies).executeAs('My:Class')
+```
+<a name="extends"></a>
+
+### extends(id, callback) ⇒ <code>[register_instance](#register_instance)</code>
+Extending class using namespace path
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>String</code> |  |
+| callback | <code>function</code> | that should return new class |
+
+**Example**  
+```js
+jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', function(Parent) {
+  return class extends Parent {
+     // child extends parent
+  }
+}).execute();
+```
+<a name="id"></a>
+
+### id(id) ⇒ <code>[register_instance](#register_instance)</code>
+Assigning id on registered reference
+
+
+| Param | Type |
+| --- | --- |
+| id | <code>String</code> | 
+
+**Example**  
+```js
+jsLights.register('My.Namespace', SampleClass).after(dependencies).id('My:Class').execute()
+```
+<a name="instantiate"></a>
+
+### instantiate(...params)
+On passed dependencies, instance of registered function will be created (end of chain)
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| ...params | <code>\*</code> | params passed in registered function |
+
+**Example**  
+```js
+jsLights.register('My.Namespace', SampleClass).after(dependencies).instantiate()
+```
