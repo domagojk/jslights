@@ -8,8 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "babel jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js",
-    "distnomin": "babel jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && rm _es5.js"
+    "dist": "babel src/jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js",
+    "distnomin": "babel src/jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && rm _es5.js"
   },
   "repository": {
     "type": "git",
