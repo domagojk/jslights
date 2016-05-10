@@ -8,9 +8,6 @@ var WolfyEventEmitter = require('wolfy87-eventemitter');
  */
 class EventEmitter extends WolfyEventEmitter {
 
-  /*
-   * Class constructor
-   */
   constructor() {
     super();
     this._hooks = {};
@@ -150,7 +147,7 @@ class EventEmitter extends WolfyEventEmitter {
 
 /**
  *
- * @namespace jsLights
+ * @class jsLights
  */
 class JsLights extends EventEmitter {
 
@@ -182,7 +179,7 @@ class JsLights extends EventEmitter {
    * @param {String} path (for example app.my.function)
    * @param {...*} reference to be assigned (usually a function or class)
    * @param {String/Array} dependency (optional) if given, reference will be assigned after passed dependencies
-   * @return {Object} jsLights register instance
+   * @return {ReturnedInstace}
    * @example
    * var hello = function() {
    *   console.log("hello") 
@@ -311,7 +308,7 @@ class JsLights extends EventEmitter {
    * @desc Registering reference at given path
    * @param {String} path (for example app.my.function)
    * @param {...*} reference to be assigned (usually a function or class)
-   * @return {Object} jsLights register instance
+   * @return {ReturnedInstace}
    * @example
    * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', Parent => class extends Parent {
    *   // child extends parent
@@ -332,6 +329,10 @@ class JsLights extends EventEmitter {
       path = false;
     }
 
+    /**
+     * 
+     * @class ReturnedInstace
+     */
     return new class {
       constructor() {
         this._after = [];
@@ -343,12 +344,12 @@ class JsLights extends EventEmitter {
       }
 
       /**
-       * @memberof returned
+       * @memberof ReturnedInstace
        * @method after
        * @desc Registering reference at given path
        * @param {String} path (for example app.my.function)
        * @param {...*} reference to be assigned (usually a function or class)
-       * @return {Object} jsLights register instance
+       * @return {ReturnedInstace}
        */
       after(path) {
         if (typeof path == 'string')
@@ -635,7 +636,7 @@ class JsLights extends EventEmitter {
    * Shorthand for jsLights.register(path, reference).extends(path)
    * @param {String} path (for example app.my.function)
    * @param {Function} reference to be assigned (must be a function returning class)
-   * @return {Object} jsLights register instance
+   * @return {ReturnedInstace}
    */
   extend(path, reference) {
     var register = this.register(path, reference);
@@ -643,6 +644,12 @@ class JsLights extends EventEmitter {
     return register;
   }
 
+  /**
+   * @memberof jsLights
+   * @method inspect
+   * @desc ss
+   * @param {String} path (for example app.my.function)
+   */
   inspect(path) {
     if (!path) {
       throw new Error('Invalid path');
@@ -684,7 +691,7 @@ class JsLights extends EventEmitter {
    * Shorthand for jsLights.register(path, reference).after(dependencies).instantiate()
    * @param {String} path (for example app.my.function)
    * @param {Function} reference from which instance is created
-   * @return {Object} jsLights register instance
+   * @return {ReturnedInstace}
    */
   instantiate(path, reference, dependency) {
     var register = this.register(path, reference);
@@ -750,8 +757,3 @@ var jsl = new JsLights();
 jsl.eventEmitter = jsl.base = EventEmitter;
 
 window.jsLights = jsl;
-
-/**
- * Avaiable methods on object returned by jsLights.register, jsLights.assign, jsLights.instantiate, 
- * @namespace returned
- */
