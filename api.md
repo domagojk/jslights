@@ -2,14 +2,14 @@
 
 * [jsLights](#jsLights)
     * [.addHook(name, cb, options)](#jsLights.addHook)
-    * [.callHooks(name, ...ref)](#jsLights.callHooks) ⇒ <code>\*</code>
+    * [.callHooks(name, ref)](#jsLights.callHooks) ⇒ <code>\*</code>
     * [.on(evt, listener)](#jsLights.on) ⇒ <code>Object</code>
-    * [.trigger(evt, ...args)](#jsLights.trigger) ⇒ <code>\*</code>
+    * [.trigger(evt, args)](#jsLights.trigger) ⇒ <code>Object</code>
     * [.unbind(eventObj)](#jsLights.unbind)
-    * [.assign(path, ...reference, dependency)](#jsLights.assign) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.assign(path, reference, dependency)](#jsLights.assign) ⇒ <code>[register_instance](#register_instance)</code>
     * [.after(dependencies, callback)](#jsLights.after)
     * [.createInstances(config)](#jsLights.createInstances)
-    * [.register(path, ...reference)](#jsLights.register) ⇒ <code>[register_instance](#register_instance)</code>
+    * [.register(path, reference)](#jsLights.register) ⇒ <code>[register_instance](#register_instance)</code>
     * [.extend(path, reference)](#jsLights.extend) ⇒ <code>[register_instance](#register_instance)</code>
     * [.inspect(path)](#jsLights.inspect)
     * [.instantiate(path, reference)](#jsLights.instantiate) ⇒ <code>[register_instance](#register_instance)</code>
@@ -33,7 +33,7 @@ My.singleton.addHook('onFetchingResults', this.myFunction, { priority: 10 });
 ```
 <a name="jsLights.callHooks"></a>
 
-### jsLights.callHooks(name, ...ref) ⇒ <code>\*</code>
+### jsLights.callHooks(name, ref) ⇒ <code>\*</code>
 Calling hooks for given name ordered by priority
 If hook is not returning false, execution stops
 
@@ -42,7 +42,7 @@ If hook is not returning false, execution stops
 | Param | Type | Description |
 | --- | --- | --- |
 | name | <code>String</code> | calling hooks registerd with given name |
-| ...ref | <code>\*</code> | argument passed in hook |
+| ref | <code>\*</code> | argument passed in hook |
 
 **Example**  
 ```js
@@ -68,16 +68,16 @@ My.singleton.on('notification', function(data) {
 ```
 <a name="jsLights.trigger"></a>
 
-### jsLights.trigger(evt, ...args) ⇒ <code>\*</code>
+### jsLights.trigger(evt, args) ⇒ <code>Object</code>
 Emits an event of your choice
 when emitted, every listener attached to that event will be executed.
 
-**Returns**: <code>\*</code> - current instance of EventEmitter for chaining  
+**Returns**: <code>Object</code> - current instance of EventEmitter for chaining  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | evt | <code>String</code> | name of the event to emit and execute listeners |
-| ...args | <code>\*</code> | optional argument to be passed to each listener |
+| args | <code>\*</code> | optional argument to be passed to each listener |
 
 **Example**  
 ```js
@@ -100,14 +100,14 @@ this.unbind(this._onNotifyReference);
 ```
 <a name="jsLights.assign"></a>
 
-### jsLights.assign(path, ...reference, dependency) ⇒ <code>[register_instance](#register_instance)</code>
+### jsLights.assign(path, reference, dependency) ⇒ <code>[register_instance](#register_instance)</code>
 Assigning reference in passed path
 
 
 | Param | Type | Description |
 | --- | --- | --- |
 | path | <code>String</code> | (for example app.my.function) |
-| ...reference | <code>\*</code> | to be assigned (usually a function or class) |
+| reference | <code>\*</code> | to be assigned (usually a function or class) |
 | dependency | <code>String/Array</code> | (optional) if given, reference will be assigned after passed dependencies |
 
 **Example**  
@@ -158,14 +158,14 @@ jsLights.createInstances({
 ```
 <a name="jsLights.register"></a>
 
-### jsLights.register(path, ...reference) ⇒ <code>[register_instance](#register_instance)</code>
+### jsLights.register(path, reference) ⇒ <code>[register_instance](#register_instance)</code>
 Registering reference at given path
 
 
 | Param | Type | Description |
 | --- | --- | --- |
 | path | <code>String</code> | (for example app.my.function) |
-| ...reference | <code>\*</code> | to be assigned (usually a function or class) |
+| reference | <code>\*</code> | to be assigned (usually a function or class) |
 
 **Example**  
 ```js
@@ -203,6 +203,10 @@ is it triggered or pending, showing status for all dependencies
 | --- | --- | --- |
 | path | <code>String</code> | (for example app.my.function) |
 
+**Example**  
+```js
+jsLights.inspect('My.Namespace1')
+```
 <a name="jsLights.instantiate"></a>
 
 ### jsLights.instantiate(path, reference) ⇒ <code>[register_instance](#register_instance)</code>
@@ -228,7 +232,7 @@ Shorthand for jsLights.register(path, reference).after(dependencies).instantiate
     * [.executeAs(id)](#executeAs)
     * [.extends(id, callback)](#extends) ⇒ <code>[register_instance](#register_instance)</code>
     * [.id(id)](#id) ⇒ <code>[register_instance](#register_instance)</code>
-    * [.instantiate(...params)](#instantiate)
+    * [.instantiate(params)](#instantiate)
 
 <a name="after"></a>
 
@@ -355,13 +359,13 @@ jsLights.register('My.Namespace', SampleClass).after(dependencies).id('My:Class'
 ```
 <a name="instantiate"></a>
 
-### instantiate(...params)
+### instantiate(params)
 On passed dependencies, instance of registered function will be created (end of chain)
 
 
 | Param | Type | Description |
 | --- | --- | --- |
-| ...params | <code>\*</code> | params passed in registered function |
+| params | <code>\*</code> | params passed in registered function |
 
 **Example**  
 ```js

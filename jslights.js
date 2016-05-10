@@ -49,8 +49,8 @@ class EventEmitter extends WolfyEventEmitter {
    * If hook is not returning false, execution stops
    *
    * @param {String} name calling hooks registerd with given name
-   * @param {...*} ref argument passed in hook
-   * @return {...*} return value from hook
+   * @param {*} ref argument passed in hook
+   * @return {*} return value from hook
    * @example
    * this.callHooks('onFetchingResults', {myParameter: 5});
    */
@@ -94,8 +94,8 @@ class EventEmitter extends WolfyEventEmitter {
    * when emitted, every listener attached to that event will be executed.
    *
    * @param {String} evt name of the event to emit and execute listeners
-   * @param {...*} args optional argument to be passed to each listener
-   * @return {...*} current instance of EventEmitter for chaining
+   * @param {*} args optional argument to be passed to each listener
+   * @return {Object} current instance of EventEmitter for chaining
    * @example
    * this.trigger('notification', { title: "Hello, its me." });
    */
@@ -177,7 +177,7 @@ class JsLights extends EventEmitter {
    * @desc Assigning reference in passed path
    *
    * @param {String} path (for example app.my.function)
-   * @param {...*} reference to be assigned (usually a function or class)
+   * @param {*} reference to be assigned (usually a function or class)
    * @param {String/Array} dependency (optional) if given, reference will be assigned after passed dependencies
    * @return {register_instance}
    * @example
@@ -307,7 +307,7 @@ class JsLights extends EventEmitter {
    * @method register
    * @desc Registering reference at given path
    * @param {String} path (for example app.my.function)
-   * @param {...*} reference to be assigned (usually a function or class)
+   * @param {*} reference to be assigned (usually a function or class)
    * @return {register_instance}
    * @example
    * jsLights.register('My.Namespace.Child').extends('My.Namespace.Parent', Parent => class extends Parent {
@@ -562,7 +562,7 @@ class JsLights extends EventEmitter {
        * @method instantiate
        * @desc 
        * On passed dependencies, instance of registered function will be created (end of chain)
-       * @param {...*} params params passed in registered function
+       * @param {*} params params passed in registered function
        * @example
        * jsLights.register('My.Namespace', SampleClass).after(dependencies).instantiate()
        */
@@ -740,6 +740,8 @@ class JsLights extends EventEmitter {
    * @desc Checking status for passed path
    * is it triggered or pending, showing status for all dependencies 
    * @param {String} path (for example app.my.function)
+   * @example
+   * jsLights.inspect('My.Namespace1')
    */
   inspect(path) {
     if (!path) {
