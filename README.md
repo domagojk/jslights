@@ -3,6 +3,14 @@
 # jsLights
 JavaScript module manager
 
+* Can be used for assigning functions in "namespaces" with dependecies
+* Using namespaces for creating multiple inheritance
+* Has built-in [event emmiter](https://github.com/Olical/EventEmitter)
+
+## Documentation
+
+* [API](docs/api.md)
+
 ## Building
 
 For now, to be able to build minified file, you need to have "babel", "browserify" and "uglifyjs" installed globaly
