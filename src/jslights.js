@@ -457,7 +457,9 @@ class JsLights extends EventEmitter {
         if (!this.onPassedDependencies) {
           this.onPassedDependencies = () => {
             var reference = this.reference();
-            this._assign(reference);
+            if (this.path) {
+              this._assign(reference);
+            }
           };
         }
         
@@ -570,7 +572,8 @@ class JsLights extends EventEmitter {
 
         this.onPassedDependencies = () => {
           var reference = new this.reference(params);
-          this._assign(reference);
+          if (this.path)
+            this._assign(reference);
         };
         this._checkDependencies();
       }
