@@ -156,7 +156,7 @@ class JsLights extends EventEmitter {
 
     this.triggered = ['EventEmitter', 'Base'];
     this._beforeDependency = {};
-    this._classExtendedWith = {};
+    this._extendedClasses = {};
     this._alias = {};
     this._registered = new Set();
 
@@ -294,12 +294,23 @@ class JsLights extends EventEmitter {
    * });
    */
   createInstances(config) {
-    for (var path in config) {
-      this.register(path, function(path) {
-        var fn = this._getPropertyByPath(path);
-        return new fn();
-      }.bind(this, config[path])).dependency(config[path]).execute();
-    }
+    setTimeout(() => {
+      // making sure that dependencies are checked on the "next tick"
+      // since there could be class extending the one which current one is dependent upon
+
+      for (var path in config) {
+        var classPath = config[path];
+        var extended = jsLights._extendedClasses[classPath];
+        if (extended) {
+          classPath = extended[extended.length - 1];
+        }
+        
+        this.after(classPath, function(registerPath, classPath) {
+          this.register(registerPath, this._getPropertyByPath(classPath)).instantiate();
+        }.bind(this, path, classPath));
+        
+      }
+    }, 0);
   }
 
   /**
@@ -358,10 +369,16 @@ class JsLights extends EventEmitter {
        * }).after(["My.Namespace1", "My.Namespace2"]).execute();
        */
       after(path) {
-        if (typeof path == 'string')
-          this._after.push(path);
-        else if (Array.isArray(path))
-          this._after = this._after.concat(path);
+        if (typeof path == 'string') {
+          if (this._after.indexOf(path) == -1)
+            this._after.push(path);
+        }
+        else if (Array.isArray(path)) {
+          path.forEach( p => {
+            if (this._after.indexOf(p) == -1)
+              this._after.push(p);
+          });
+        }
 
         return this;
       }
@@ -379,8 +396,6 @@ class JsLights extends EventEmitter {
           this._assign(this.reference);
         };
         this._checkDependencies();
-
-        return this;
       }
 
       /**
@@ -575,6 +590,7 @@ class JsLights extends EventEmitter {
           if (this.path)
             this._assign(reference);
         };
+
         this._checkDependencies();
       }
 
@@ -618,6 +634,24 @@ class JsLights extends EventEmitter {
       }
 
       _checkDependencies() {
+
+        if (!this._extendedChecked && this.path) {
+          this._extendedChecked = true;
+
+          for (var item of jsLights._registered) {
+            if (item.path == this.path && item != this) {
+              if (!jsLights._extendedClasses[this.path]) {
+                jsLights._extendedClasses[this.path] = [];
+              }
+
+              if (!this._id) {
+                this.id(this.path + '-' + jsLights._extendedClasses[this.path].length)
+              }
+
+              jsLights._extendedClasses[this.path].push(this._id);
+            }
+          }
+        }
 
         // should some events be assigned before
         if (this._before) {
