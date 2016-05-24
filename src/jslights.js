@@ -294,10 +294,10 @@ class JsLights extends EventEmitter {
    * });
    */
   createInstances(config) {
+    // making sure that dependencies are checked on the "next tick"
+    // since there could be class extending the one which current one is dependent upon
     setTimeout(() => {
-      // making sure that dependencies are checked on the "next tick"
-      // since there could be class extending the one which current one is dependent upon
-
+      
       for (var path in config) {
         var classPath = config[path];
         var extended = jsLights._extendedClasses[classPath];
@@ -310,13 +310,14 @@ class JsLights extends EventEmitter {
         }.bind(this, path, classPath));
         
       }
-    }, 0);
+    }, 1); // 1ms timeout is becaouse 0ms timeout is used for default ending method chain on register()
   }
 
   /**
    * @memberof jsLights
    * @method register
    * @desc Registering reference at given path
+   * returned instance
    * @param {String} path (for example app.my.function)
    * @param {*} reference to be assigned (usually a function or class)
    * @return {register_instance}
@@ -343,6 +344,7 @@ class JsLights extends EventEmitter {
     /**
      * 
      * @class register_instance
+     * todo: explain setTimeout execute()
      */
     return new class {
       constructor() {
@@ -352,6 +354,10 @@ class JsLights extends EventEmitter {
         this._listeningFor = new Set();
 
         jsLights._registered.add(this);
+
+        this._defaultChainEnd = setTimeout( () => {
+          this.execute();
+        }, 0)
       }
 
       /**
@@ -634,6 +640,8 @@ class JsLights extends EventEmitter {
       }
 
       _checkDependencies() {
+
+        clearTimeout(this._defaultChainEnd);
 
         if (!this._extendedChecked && this.path) {
           this._extendedChecked = true;

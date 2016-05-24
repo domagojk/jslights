@@ -1,6 +1,6 @@
 {
   "name": "jslights",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "JavaScript module manager",
   "main": "src/jslights.js",
   "dependencies": {
