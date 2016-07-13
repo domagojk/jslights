@@ -1,5 +1,4 @@
-var WolfyEventEmitter = require('wolfy87-eventemitter');
-
+import WolfyEventEmitter from 'EventEmitter';
 /*
  * Event Emmiter and hooks
  *
@@ -244,7 +243,7 @@ class JsLights extends EventEmitter {
         var onBaseClass = eventsArr[1];
 
         jsLights.after(baseClass, () => {
-          var baseClassObj = jsLights._getPropertyByPath(baseClass);
+          var baseClassObj = jsLights.getByPath(baseClass);
           if (!baseClassObj) {
             throw new Error(baseClass + ' not found');
           }
@@ -306,7 +305,7 @@ class JsLights extends EventEmitter {
         }
         
         this.after(classPath, function(registerPath, classPath) {
-          this.register(registerPath, this._getPropertyByPath(classPath)).instantiate();
+          this.register(registerPath, this.getByPath(classPath)).instantiate();
         }.bind(this, path, classPath));
         
       }
@@ -537,7 +536,7 @@ class JsLights extends EventEmitter {
 
         this.onPassedDependencies = () => {
 
-          var superReference = jsLights._getPropertyByPath(path);
+          var superReference = jsLights.getByPath(path);
           var superjsLightsInstance = superReference._jsLightsInstance;
           this.parent = superjsLightsInstance;
           this.reference = this._classCreator(superReference);
@@ -706,7 +705,7 @@ class JsLights extends EventEmitter {
             var onBaseClass = eventsArr[1];
 
             jsLights.after(baseClass, () => {
-              var baseClassObj = jsLights._getPropertyByPath(baseClass);
+              var baseClassObj = jsLights.getByPath(baseClass);
               if (!baseClassObj) {
                 throw new Error(baseClass + ' not found');
               }
@@ -777,6 +776,29 @@ class JsLights extends EventEmitter {
     var register = this.register(path, reference);
     register.extends(path);
     return register;
+  }
+
+  getByPath(path) {
+    
+    path = this._alias[path] || path;
+
+    if (path == 'EventEmitter' || path == 'Base') {
+      return window.jsLights.eventEmitter;
+    }
+
+    var parts = path.split( '.' );
+    var property = window;
+
+    for (var i = 0; i < parts.length; i++ ) {
+      property = property[parts[i]];
+      if (property === undefined)
+        return undefined;
+    }
+    
+    if(i == 0)
+      return undefined;
+
+    return property;
   }
 
   /**
@@ -866,29 +888,6 @@ class JsLights extends EventEmitter {
     }
     return path;
   } 
-
-  _getPropertyByPath(path) {
-    
-    path = this._alias[path] || path;
-
-    if (path == 'EventEmitter' || path == 'Base') {
-      return window.jsLights.eventEmitter;
-    }
-
-    var parts = path.split( '.' );
-    var property = window;
-
-    for (var i = 0; i < parts.length; i++ ) {
-      property = property[parts[i]];
-      if (property === undefined)
-        return undefined;
-    }
-    
-    if(i == 0)
-      return undefined;
-
-    return property;
-  }
 }
 
 var jsl = new JsLights();

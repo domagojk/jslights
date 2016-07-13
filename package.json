@@ -1,15 +1,13 @@
 {
   "name": "jslights",
-  "version": "0.6.7",
+  "version": "0.7.0",
   "description": "JavaScript module manager",
   "main": "src/jslights.js",
   "dependencies": {
     "wolfy87-eventemitter": "^4.3.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "babel src/jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && uglifyjs dist/jslights.js -o dist/jslights.js && rm _es5.js",
-    "distnomin": "babel src/jslights.js -o _es5.js && browserify _es5.js -o dist/jslights.js && rm _es5.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -19,5 +17,27 @@
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/domagojk/jslights/issues"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "karma": "^1.1.1",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^1.0.1",
+    "karma-mocha": "^1.1.1",
+    "karma-mocha-reporter": "^2.0.4",
+    "mocha": "^2.5.3"
+  },
+  "jspm": {
+    "name": "jslights",
+    "main": "jslights.js",
+    "dependencies": {
+      "EventEmitter": "npm:wolfy87-eventemitter@^5.1.0"
+    },
+    "devDependencies": {
+      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.12"
+    },
+    "peerDependencies": {
+      "fs": "github:jspm/nodelibs-fs@^0.2.0-alpha"
+    }
   }
 }
