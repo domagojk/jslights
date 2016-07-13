@@ -11,12 +11,6 @@ JavaScript module manager
 
 * [API](docs/api.md)
 
-## Building
-
-For now, to be able to build minified file, you need to have "babel", "browserify" and "uglifyjs" installed globaly
-```bash
-npm run dist
-```
 
 [downloads-image]: http://img.shields.io/npm/dm/jslights.svg
 [npm-url]: https://npmjs.org/package/jslights
